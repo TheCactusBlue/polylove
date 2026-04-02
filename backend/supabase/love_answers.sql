@@ -22,19 +22,19 @@ select
 
 drop policy if exists "self delete" on love_answers;
 
-create policy "self delete" on love_answers for delete using ((creator_id = firebase_uid ()));
+create policy "self delete" on love_answers for delete using ((creator_id = auth_uid ()));
 
 drop policy if exists "self insert" on love_answers;
 
 create policy "self insert" on love_answers for insert
 with
-  check ((creator_id = firebase_uid ()));
+  check ((creator_id = auth_uid ()));
 
 drop policy if exists "self update" on love_answers;
 
 create policy "self update" on love_answers
 for update
-  using ((creator_id = firebase_uid ()));
+  using ((creator_id = auth_uid ()));
 
 -- Indexes
 drop index if exists love_answers_creator_id_created_time_idx;

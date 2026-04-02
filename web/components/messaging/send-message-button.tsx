@@ -15,7 +15,7 @@ import { MAX_COMMENT_LENGTH } from 'common/comment'
 import { CommentInputTextArea } from 'web/components/comments/comment-input'
 import { Title } from 'web/components/widgets/title'
 import { Row } from 'web/components/layout/row'
-import { firebaseLogin } from 'web/lib/firebase/users'
+import { loginWithGoogle } from 'web/lib/auth/supabase-auth'
 
 export const SendMessageButton = (props: {
   toUser: User
@@ -34,7 +34,7 @@ export const SendMessageButton = (props: {
   const [submitting, setSubmitting] = useState(false)
 
   const messageButtonClicked = async () => {
-    if (!currentUser) return firebaseLogin()
+    if (!currentUser) return loginWithGoogle()
     const previousDirectMessageChannel = findKey(
       memberIdsByChannelId,
       (dm) => dm.includes(toUser.id) && dm.length === 1

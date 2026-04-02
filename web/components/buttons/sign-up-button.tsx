@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-import { firebaseLogin } from 'web/lib/firebase/users'
+import { loginWithGoogle } from 'web/lib/auth/supabase-auth'
 import { Button } from './button'
 import { Col } from '../layout/col'
 import { Row } from 'web/components/layout/row'
@@ -13,7 +13,7 @@ export const SidebarSignUpButton = (props: { className?: string }) => {
       <Button
         color="gradient"
         size="xl"
-        onClick={firebaseLogin}
+        onClick={loginWithGoogle}
         className="w-full"
       >
         Sign up

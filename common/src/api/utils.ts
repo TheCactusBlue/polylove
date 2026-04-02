@@ -1,4 +1,3 @@
-import { ENV_CONFIG } from 'common/envs/constants'
 import { type APIPath } from './schema'
 
 type ErrorCode =
@@ -24,15 +23,19 @@ export function pathWithPrefix(path: APIPath) {
   return `v0/${path}`
 }
 
+function getEndpoint() {
+  return process.env.NEXT_PUBLIC_API_URL ?? 'localhost:8088'
+}
+
 export function getWebsocketUrl() {
-  const endpoint = process.env.NEXT_PUBLIC_API_URL ?? ENV_CONFIG.apiEndpoint
+  const endpoint = getEndpoint()
   const protocol = endpoint.startsWith('localhost') ? 'ws' : 'wss'
 
   return `${protocol}://${endpoint}/ws`
 }
 
 export function getApiUrl(path: string) {
-  const endpoint = process.env.NEXT_PUBLIC_API_URL ?? ENV_CONFIG.apiEndpoint
+  const endpoint = getEndpoint()
   const protocol = endpoint.startsWith('localhost') ? 'http' : 'https'
   const prefix = 'v0'
   return `${protocol}://${endpoint}/${prefix}/${path}`

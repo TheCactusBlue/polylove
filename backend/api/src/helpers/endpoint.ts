@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin'
+import { verify, type JwtPayload } from 'jsonwebtoken'
 import { z } from 'zod'
 import { Request, Response, NextFunction } from 'express'
 
@@ -35,12 +35,11 @@ export type AuthedUser = {
   uid: string
   creds: JwtCredentials | (KeyCredentials & { privateUser: PrivateUser })
 }
-type JwtCredentials = { kind: 'jwt'; data: admin.auth.DecodedIdToken }
+type JwtCredentials = { kind: 'jwt'; data: JwtPayload }
 type KeyCredentials = { kind: 'key'; data: string }
 type Credentials = JwtCredentials | KeyCredentials
 
 export const parseCredentials = async (req: Request): Promise<Credentials> => {
-  const auth = admin.auth()
   const authHeader = req.get('Authorization')
   if (!authHeader) {
     throw new APIError(401, 'Missing Authorization header.')
@@ -54,13 +53,18 @@ export const parseCredentials = async (req: Request): Promise<Credentials> => {
   switch (scheme) {
     case 'Bearer':
       if (payload === 'undefined') {
-        throw new APIError(401, 'Firebase JWT payload undefined.')
+        throw new APIError(401, 'JWT payload undefined.')
       }
       try {
-        return { kind: 'jwt', data: await auth.verifyIdToken(payload) }
+        const jwtSecret = process.env.SUPABASE_JWT_SECRET
+        if (!jwtSecret) {
+          throw new APIError(500, 'SUPABASE_JWT_SECRET not configured.')
+        }
+        const decoded = verify(payload, jwtSecret) as JwtPayload
+        return { kind: 'jwt', data: decoded }
       } catch (err) {
-        // This is somewhat suspicious, so get it into the firebase console
-        console.error('Error verifying Firebase JWT: ', err, scheme, payload)
+        if (err instanceof APIError) throw err
+        console.error('Error verifying JWT: ', err)
         throw new APIError(500, 'Error validating token.')
       }
     case 'Key':
@@ -73,10 +77,11 @@ export const parseCredentials = async (req: Request): Promise<Credentials> => {
 export const lookupUser = async (creds: Credentials): Promise<AuthedUser> => {
   switch (creds.kind) {
     case 'jwt': {
-      if (typeof creds.data.user_id !== 'string') {
-        throw new APIError(401, 'JWT must contain Manifold user ID.')
+      const sub = creds.data.sub
+      if (typeof sub !== 'string') {
+        throw new APIError(401, 'JWT must contain a valid sub claim.')
       }
-      return { uid: creds.data.user_id, creds }
+      return { uid: sub, creds }
     }
     case 'key': {
       const key = creds.data

@@ -45,12 +45,6 @@ export const API = (_apiTypeCheck = {
     props: z.object({}),
     returns: {} as { message: 'Server is working.'; uid?: string },
   },
-  'get-supabase-token': {
-    method: 'GET',
-    authed: true,
-    props: z.object({}),
-    returns: {} as { jwt: string },
-  },
   'mark-all-notifs-read': {
     method: 'POST',
     authed: true,

@@ -15,7 +15,7 @@ import toast from 'react-hot-toast'
 import { BiRepost } from 'react-icons/bi'
 import { Tooltip } from 'web/components/widgets/tooltip'
 import { track } from 'web/lib/service/analytics'
-import { firebaseLogin } from 'web/lib/firebase/users'
+import { loginWithGoogle } from 'web/lib/auth/supabase-auth'
 import { useEvent } from 'web/hooks/use-event'
 
 export function CommentInput(props: {
@@ -60,7 +60,7 @@ export function CommentInput(props: {
     setIsSubmitting(true)
     if (!user) {
       track('sign in to comment')
-      await firebaseLogin()
+      await loginWithGoogle()
       setIsSubmitting(false)
       return
     }

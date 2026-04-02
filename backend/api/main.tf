@@ -95,10 +95,8 @@ spec:
   containers:
     - image: '${var.image_url}'
       env:
-      - name: NEXT_PUBLIC_FIREBASE_ENV
+      - name: ENVIRONMENT
         value: ${upper(var.env)}
-      - name: GOOGLE_CLOUD_PROJECT
-        value: ${local.project}
       ports:
         - containerPort: 80
 EOF

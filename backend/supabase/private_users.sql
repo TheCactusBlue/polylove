@@ -13,7 +13,7 @@ drop policy if exists "private read" on private_users;
 
 create policy "private read" on private_users for
 select
-  using ((firebase_uid () = id));
+  using ((auth_uid () = id));
 
 -- Indexes
 drop index if exists private_users_pkey;

@@ -1,20 +1,8 @@
 import { type User } from 'common/user'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import {
-  GoogleAuthProvider,
-  OAuthProvider,
-  getAuth,
-  signInWithPopup,
-} from 'firebase/auth'
+import { db } from 'web/lib/supabase/db'
 import { safeLocalStorage } from '../util/local'
-import { app } from './init'
-
-dayjs.extend(utc)
 
 export type { User }
-
-export const auth = getAuth(app)
 
 export const CACHED_REFERRAL_USERNAME_KEY = 'CACHED_REFERRAL_KEY'
 
@@ -47,27 +35,23 @@ export function writeReferralInfo(
   }
 }
 
-export async function firebaseLogin() {
-  const provider = new GoogleAuthProvider()
-  return signInWithPopup(auth, provider).then(async (result) => {
-    return result
+export async function loginWithGoogle() {
+  return db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
   })
 }
 
 export async function loginWithApple() {
-  const provider = new OAuthProvider('apple.com')
-  provider.addScope('email')
-  provider.addScope('name')
-
-  return signInWithPopup(auth, provider)
-    .then((result) => {
-      return result
-    })
-    .catch((error) => {
-      console.error(error)
-    })
+  return db.auth.signInWithOAuth({
+    provider: 'apple',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      scopes: 'email name',
+    },
+  })
 }
 
-export async function firebaseLogout() {
-  await auth.signOut()
+export async function logout() {
+  return db.auth.signOut()
 }

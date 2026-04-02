@@ -13,14 +13,13 @@ case $ENV in
 esac
 
 DIR=web
-export IS_MANIFOLD_LOVE=true
 
 npx concurrently \
     -n API,NEXT,TS \
     -c white,magenta,cyan \
-    "cross-env ENV=${NEXT_ENV} \
+    "cross-env ENVIRONMENT=${NEXT_ENV} \
                       yarn --cwd=backend/api dev" \
     "cross-env NEXT_PUBLIC_API_URL=localhost:8088 \
-              NEXT_PUBLIC_FIREBASE_ENV=${NEXT_ENV} \
+              NEXT_PUBLIC_ENVIRONMENT=${NEXT_ENV} \
               yarn --cwd=${DIR} serve" \
     "cross-env yarn --cwd=${DIR} ts-watch"

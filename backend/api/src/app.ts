@@ -19,7 +19,6 @@ import { getCompatibilityQuestions } from './get-compatibililty-questions'
 import { getLikesAndShips } from './get-likes-and-ships'
 import { getLoverAnswers } from './get-lover-answers'
 import { getLovers } from './get-lovers'
-import { getSupabaseToken } from './get-supabase-token'
 import { getDisplayUser, getUser } from './get-user'
 import { getMe } from './get-me'
 import { hasFreeLike } from './has-free-like'
@@ -103,7 +102,6 @@ app.options('*', allowCorsUnrestricted)
 
 const handlers: { [k in APIPath]: APIHandler<k> } = {
   health: health,
-  'get-supabase-token': getSupabaseToken,
   'get-notifications': getNotifications,
   'mark-all-notifs-read': markAllNotifsRead,
   'user/:username': getUser,

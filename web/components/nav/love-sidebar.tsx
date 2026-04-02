@@ -8,7 +8,7 @@ import clsx from 'clsx'
 import { buildArray } from 'common/util/array'
 import Router, { useRouter } from 'next/router'
 import { useUser } from 'web/hooks/use-user'
-import { firebaseLogin, firebaseLogout } from 'web/lib/firebase/users'
+import { loginWithGoogle, logout } from 'web/lib/auth/supabase-auth'
 import { withTracking } from 'web/lib/service/analytics'
 import { ProfileSummary } from './love-profile-summary'
 import { Item, SidebarItem } from './love-sidebar-item'
@@ -76,7 +76,7 @@ export default function Sidebar(props: {
 const logout = async () => {
   // log out, and then reload the page, in case SSR wants to boot them out
   // of whatever logged-in-only area of the site they might be in
-  await withTracking(firebaseLogout, 'sign out')()
+  await withTracking(logout, 'sign out')()
   await Router.replace(Router.asPath)
 }
 
@@ -86,7 +86,7 @@ const bottomNav = (
   toggleTheme: () => void
 ) =>
   buildArray<Item>(
-    !loggedIn && { name: 'Sign in', icon: LoginIcon, onClick: firebaseLogin },
+    !loggedIn && { name: 'Sign in', icon: LoginIcon, onClick: loginWithGoogle },
     {
       name: theme ?? 'auto',
       children:
@@ -147,7 +147,7 @@ export const SignUpAsMatchmaker = (props: {
     <Button
       color={'indigo-outline'}
       size={size ?? 'md'}
-      onClick={firebaseLogin}
+      onClick={loginWithGoogle}
       className={clsx('w-full', className)}
     >
       Sign up as matchmaker

@@ -11,12 +11,11 @@
   "sideEffects": false,
   "dependencies": {
     "@google-cloud/monitoring": "4.0.0",
-    "@google-cloud/secret-manager": "4.2.1",
+    "@supabase/supabase-js": "2.38.5",
     "@tiptap/core": "2.3.2",
     "@tiptap/html": "2.3.2",
     "colors": "1.4.0",
     "dayjs": "1.11.4",
-    "firebase-admin": "11.11.1",
     "gcp-metadata": "6.1.0",
     "lodash": "4.17.21",
     "pg-promise": "11.4.1",

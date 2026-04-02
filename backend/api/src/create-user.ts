@@ -1,4 +1,3 @@
-import * as admin from 'firebase-admin'
 import { PrivateUser } from 'common/user'
 import { randomString } from 'common/util/random'
 import { cleanDisplayName, cleanUsername } from 'common/util/clean-username'
@@ -7,14 +6,12 @@ import { APIError, APIHandler } from './helpers/endpoint'
 import { getDefaultNotificationPreferences } from 'common/user-notification-preferences'
 import { removeUndefinedProps } from 'common/util/object'
 import { generateAvatarUrl } from 'shared/helpers/generate-and-update-avatar-urls'
-import { getStorage } from 'firebase-admin/storage'
-import { DEV_CONFIG } from 'common/envs/dev'
-import { PROD_CONFIG } from 'common/envs/prod'
 import { RESERVED_PATHS } from 'common/envs/constants'
-import { log, isProd, getUser, getUserByUsername } from 'shared/utils'
+import { log, getUser, getUserByUsername } from 'shared/utils'
 import { createSupabaseDirectClient } from 'shared/supabase/init'
 import { insert } from 'shared/supabase/utils'
 import { convertPrivateUser, convertUser } from 'common/supabase/users'
+import { getSupabaseAdmin } from 'shared/init-supabase-admin'
 
 export const createUser: APIHandler<'create-user'> = async (
   props,
@@ -22,12 +19,22 @@ export const createUser: APIHandler<'create-user'> = async (
   req
 ) => {
   const { deviceToken: preDeviceToken, adminToken } = props
-  const firebaseUser = await admin.auth().getUser(auth.uid)
 
-  const testUserAKAEmailPasswordUser =
-    firebaseUser.providerData[0].providerId === 'password'
+  // The auth.uid is the Supabase Auth UUID (from the JWT sub claim).
+  // Look up the Supabase Auth user to get their profile info.
+  const supabaseAdmin = getSupabaseAdmin()
+  const {
+    data: { user: authUser },
+    error: authError,
+  } = await supabaseAdmin.auth.admin.getUserById(auth.uid)
+
+  if (authError || !authUser) {
+    throw new APIError(401, 'Could not fetch auth user: ' + authError?.message)
+  }
+
+  const isEmailPasswordUser = authUser.app_metadata?.provider === 'email'
   if (
-    testUserAKAEmailPasswordUser &&
+    isEmailPasswordUser &&
     adminToken !== process.env.TEST_CREATE_USER_KEY
   ) {
     throw new APIError(
@@ -40,21 +47,24 @@ export const createUser: APIHandler<'create-user'> = async (
   log(`Create user from: ${host}`)
 
   const ip = getIp(req)
-  const deviceToken = testUserAKAEmailPasswordUser
+  const deviceToken = isEmailPasswordUser
     ? randomString() + randomString()
     : preDeviceToken
 
-  const fbUser = await admin.auth().getUser(auth.uid)
-  const email = fbUser.email
+  const email = authUser.email
   const emailName = email?.replace(/@.*$/, '')
 
-  const rawName = fbUser.displayName || emailName || 'User' + randomString(4)
+  const rawName =
+    authUser.user_metadata?.full_name ||
+    authUser.user_metadata?.name ||
+    emailName ||
+    'User' + randomString(4)
   const name = cleanDisplayName(rawName)
 
-  const bucket = getStorage().bucket(getStorageBucketId())
-  const avatarUrl = fbUser.photoURL
-    ? fbUser.photoURL
-    : await generateAvatarUrl(auth.uid, name, bucket)
+  const avatarUrl =
+    authUser.user_metadata?.avatar_url ||
+    authUser.user_metadata?.picture ||
+    (await generateAvatarUrl(auth.uid, name))
 
   const pg = createSupabaseDirectClient()
 
@@ -119,7 +129,7 @@ export const createUser: APIHandler<'create-user'> = async (
     }
   })
 
-  log('created user ', { username: user.username, firebaseId: auth.uid })
+  log('created user ', { username: user.username, id: auth.uid })
 
   const continuation = async () => {
     await track(auth.uid, 'create lover', { username: user.username })
@@ -132,12 +142,6 @@ export const createUser: APIHandler<'create-user'> = async (
     },
     continue: continuation,
   }
-}
-
-function getStorageBucketId() {
-  return isProd()
-    ? PROD_CONFIG.firebaseConfig.storageBucket
-    : DEV_CONFIG.firebaseConfig.storageBucket
 }
 
 // Automatically ban users with these device tokens or ip addresses.

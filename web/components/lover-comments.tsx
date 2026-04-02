@@ -13,7 +13,8 @@ import { Avatar } from 'web/components/widgets/avatar'
 import { UserLink } from 'web/components/widgets/user-link'
 import { useEvent } from 'web/hooks/use-event'
 import { useUser } from 'web/hooks/use-user'
-import { firebaseLogin, User } from 'web/lib/firebase/users'
+import { loginWithGoogle } from 'web/lib/auth/supabase-auth'
+import { User } from 'common/user'
 import TriangleDownFillIcon from 'web/lib/icons/triangle-down-fill-icon.svg'
 import TriangleFillIcon from 'web/lib/icons/triangle-fill-icon.svg'
 import { scrollIntoViewCentered } from 'web/lib/util/scroll'
@@ -395,7 +396,7 @@ export function LoverCommentInput(props: {
   const onSubmitComment = useEvent(async (editor: Editor) => {
     if (!user) {
       track('sign in to comment')
-      await firebaseLogin()
+      await loginWithGoogle()
       return
     }
     await api('create-comment', {

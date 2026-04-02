@@ -1,8 +1,6 @@
 import pgPromise from 'pg-promise'
 export { SupabaseClient } from 'common/supabase/utils'
-import { DEV_CONFIG } from 'common/envs/dev'
-import { PROD_CONFIG } from 'common/envs/prod'
-import { metrics, log, isProd } from '../utils'
+import { metrics, log } from '../utils'
 import { IDatabase, ITask } from 'pg-promise'
 import { IClient } from 'pg-promise/typescript/pg-subset'
 import { HOUR_MS } from 'common/util/time'
@@ -12,7 +10,6 @@ import { type IConnectionParameters } from 'pg-promise/typescript/pg-subset'
 
 export const pgp = pgPromise({
   error(err: any, e: pgPromise.IEventContext) {
-    // Read more: https://node-postgres.com/apis/pool#error
     log.error('pgPromise background error', {
       error: err,
       event: e,
@@ -37,29 +34,8 @@ pgp.pg.types.setTypeParser(1700, parseFloat) // Type Id 1700 = NUMERIC
 export type SupabaseTransaction = ITask<{}>
 export type SupabaseDirectClient = IDatabase<{}, IClient> | SupabaseTransaction
 
-export function getInstanceId() {
-  return (
-    process.env.SUPABASE_INSTANCE_ID ??
-    (isProd() ? PROD_CONFIG.supabaseInstanceId : DEV_CONFIG.supabaseInstanceId)
-  )
-}
-
-const newClient = (
-  props: {
-    instanceId?: string
-    password?: string
-  } & IConnectionParameters
-) => {
-  const { instanceId, password, ...settings } = props
-
-  return pgp({
-    host: 'aws-0-us-west-1.pooler.supabase.com',
-    port: 5432,
-    user: `postgres.${instanceId}`,
-    password: password,
-    database: 'postgres',
-    ...settings,
-  })
+const newClient = (settings: IConnectionParameters) => {
+  return pgp(settings)
 }
 
 // Use one connection to avoid WARNING: Creating a duplicate database object for the same connection.
@@ -69,24 +45,46 @@ export function createSupabaseDirectClient(
   password?: string
 ) {
   if (pgpDirect) return pgpDirect
-  instanceId = instanceId ?? getInstanceId()
+
+  // Prefer a full connection string if provided
+  const dbUrl = process.env.SUPABASE_DB_URL
+  if (dbUrl) {
+    const client = newClient({
+      connectionString: dbUrl,
+      query_timeout: HOUR_MS,
+      max: 20,
+    })
+    attachPoolMetrics(client)
+    return (pgpDirect = client)
+  }
+
+  // Fall back to constructing from instance ID + password
+  instanceId = instanceId ?? process.env.SUPABASE_INSTANCE_ID
   if (!instanceId) {
     throw new Error(
-      "Can't connect to Supabase; no process.env.SUPABASE_INSTANCE_ID and no instance ID in config."
+      "Can't connect to Supabase; set SUPABASE_DB_URL or SUPABASE_INSTANCE_ID."
     )
   }
   password = password ?? process.env.SUPABASE_PASSWORD
   if (!password) {
     throw new Error(
-      "Can't connect to Supabase; no process.env.SUPABASE_PASSWORD."
+      "Can't connect to Supabase; no SUPABASE_PASSWORD set."
     )
   }
   const client = newClient({
-    instanceId: getInstanceId(),
+    host: 'aws-0-us-west-1.pooler.supabase.com',
+    port: 5432,
+    user: `postgres.${instanceId}`,
     password: password,
-    query_timeout: HOUR_MS, // mqp: debugging scheduled job behavior
+    database: 'postgres',
+    query_timeout: HOUR_MS,
     max: 20,
   })
+  attachPoolMetrics(client)
+  return (pgpDirect = client)
+}
+
+function attachPoolMetrics(client: IDatabase<{}, IClient>) {
   const pool = client.$pool
   pool.on('connect', () => metrics.inc('pg/connections_established'))
   pool.on('remove', () => metrics.inc('pg/connections_terminated'))
@@ -98,15 +96,28 @@ export function createSupabaseDirectClient(
     metrics.set('pg/pool_connections', pool.expiredCount, { state: 'expired' })
     metrics.set('pg/pool_connections', pool.totalCount, { state: 'total' })
   }, METRICS_INTERVAL_MS)
-  return (pgpDirect = client)
 }
 
 let shortTimeoutPgpClient: IDatabase<{}, IClient> | null = null
 export const createShortTimeoutDirectClient = () => {
   if (shortTimeoutPgpClient) return shortTimeoutPgpClient
+
+  const dbUrl = process.env.SUPABASE_DB_URL
+  if (dbUrl) {
+    shortTimeoutPgpClient = newClient({
+      connectionString: dbUrl,
+      query_timeout: 1000 * 30,
+      max: 20,
+    })
+    return shortTimeoutPgpClient
+  }
+
   shortTimeoutPgpClient = newClient({
-    instanceId: getInstanceId(),
+    host: 'aws-0-us-west-1.pooler.supabase.com',
+    port: 5432,
+    user: `postgres.${process.env.SUPABASE_INSTANCE_ID}`,
     password: process.env.SUPABASE_PASSWORD,
+    database: 'postgres',
     query_timeout: 1000 * 30,
     max: 20,
   })

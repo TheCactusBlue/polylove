@@ -1,24 +1,20 @@
 'use client'
 import { createContext, ReactNode, useEffect, useState } from 'react'
-import { pickBy } from 'lodash'
-import { onIdTokenChanged, User as FirebaseUser } from 'firebase/auth'
-import { auth } from 'web/lib/firebase/users'
+import { db } from 'web/lib/supabase/db'
 import { api } from 'web/lib/api'
 import { randomString } from 'common/util/random'
 import { useStateCheckEquality } from 'web/hooks/use-state-check-equality'
-import { AUTH_COOKIE_NAME, TEN_YEARS_SECS } from 'common/envs/constants'
-import { getCookie, setCookie } from 'web/lib/util/cookie'
 import {
   type PrivateUser,
   type User,
   type UserAndPrivateUser,
 } from 'common/user'
 import { safeLocalStorage } from 'web/lib/util/local'
-import { updateSupabaseAuth } from 'web/lib/supabase/db'
 import { useEffectCheckEquality } from 'web/hooks/use-effect-check-equality'
 import { getPrivateUserSafe, getUserSafe } from 'web/lib/supabase/users'
 import { useWebsocketPrivateUser, useWebsocketUser } from 'web/hooks/use-user'
 import { identifyUser, setUserProperty } from 'web/lib/service/analytics'
+import { getCookie, setCookie } from 'web/lib/util/cookie'
 
 // Either we haven't looked up the logged in user yet (undefined), or we know
 // the user is not logged in (null), or we know the user is logged in.
@@ -47,27 +43,6 @@ const getAdminToken = () => {
     setCookie(key, localStorageToken.replace(/"/g, ''))
   }
   return localStorageToken?.replace(/"/g, '') ?? ''
-}
-
-const stripUserData = (user: object) => {
-  // there's some risk that this cookie could be too big for some clients,
-  // so strip it down to only the keys that the server auth actually needs
-  // in order to auth to the firebase SDK
-  const whitelist = ['uid', 'emailVerified', 'isAnonymous', 'stsTokenManager']
-  const stripped = pickBy(user, (_v, k) => whitelist.includes(k))
-  // mqp: temp fix to get cookie size under 4k in edge cases
-  delete (stripped as any).stsTokenManager.accessToken
-  return JSON.stringify(stripped)
-}
-
-const setUserCookie = (data: object | undefined) => {
-  const stripped = data ? stripUserData(data) : ''
-  setCookie(AUTH_COOKIE_NAME, stripped, [
-    ['path', '/'],
-    ['max-age', (data === undefined ? 0 : TEN_YEARS_SECS).toString()],
-    ['samesite', 'lax'],
-    ['secure'],
-  ])
 }
 
 export const AuthContext = createContext<AuthUser>(undefined)
@@ -114,62 +89,49 @@ export function AuthProvider(props: {
     }
   }, [authUser])
 
-  const onAuthLoad = (
-    fbUser: FirebaseUser,
-    user: User,
-    privateUser: PrivateUser
-  ) => {
+  const onAuthLoad = (user: User, privateUser: PrivateUser) => {
     setUser(user)
     setPrivateUser(privateUser)
     setAuthLoaded(true)
-    // generate auth token
-    fbUser.getIdToken()
   }
 
   useEffect(() => {
-    return onIdTokenChanged(
-      auth,
-      async (fbUser) => {
-        if (fbUser) {
-          setUserCookie(fbUser.toJSON())
+    const {
+      data: { subscription },
+    } = db.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const supabaseUserId = session.user.id
 
-          const [user, privateUser, supabaseJwt] = await Promise.all([
-            getUserSafe(fbUser.uid),
-            getPrivateUserSafe(),
-            api('get-supabase-token').catch((e) => {
-              console.error('Error getting supabase token', e)
-              return null
-            }),
-          ])
-          // When testing on a mobile device, we'll be pointed at a local ip or ngrok address, so this will fail
-          if (supabaseJwt) updateSupabaseAuth(supabaseJwt.jwt)
+        const [user, privateUser] = await Promise.all([
+          getUserSafe(supabaseUserId),
+          getPrivateUserSafe(),
+        ])
 
-          if (!user || !privateUser) {
-            const deviceToken = ensureDeviceToken()
-            const adminToken = getAdminToken()
+        if (!user || !privateUser) {
+          const deviceToken = ensureDeviceToken()
+          const adminToken = getAdminToken()
 
-            const newUser = (await api('create-user', {
-              deviceToken,
-              adminToken,
-            })) as UserAndPrivateUser
+          const newUser = (await api('create-user', {
+            deviceToken,
+            adminToken,
+          })) as UserAndPrivateUser
 
-            onAuthLoad(fbUser, newUser.user, newUser.privateUser)
-          } else {
-            onAuthLoad(fbUser, user, privateUser)
-          }
+          onAuthLoad(newUser.user, newUser.privateUser)
         } else {
-          // User logged out; reset to null
-          setUserCookie(undefined)
-          setUser(null)
-          setPrivateUser(undefined)
-          // Clear local storage only if we were signed in, otherwise we'll clear referral info
-          if (safeLocalStorage?.getItem(CACHED_USER_KEY)) localStorage.clear()
+          onAuthLoad(user, privateUser)
         }
-      },
-      (e) => {
-        console.error(e)
+      } else {
+        // User logged out; reset to null
+        setUser(null)
+        setPrivateUser(undefined)
+        // Clear local storage only if we were signed in, otherwise we'll clear referral info
+        if (safeLocalStorage?.getItem(CACHED_USER_KEY)) localStorage.clear()
       }
-    )
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const uid = authUser ? authUser.user.id : authUser

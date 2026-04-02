@@ -2,7 +2,8 @@ import { API, APIParams, APIPath, APIResponse } from 'common/api/schema'
 import { APIError, getApiUrl } from 'common/api/utils'
 import { forEach } from 'lodash'
 import { removeUndefinedProps } from 'common/util/object'
-import { User } from 'firebase/auth'
+
+export type AuthSession = { access_token: string } | null
 
 export function unauthedApi<P extends APIPath>(path: P, params: APIParams<P>) {
   return typedAPICall(path, params, null)
@@ -11,7 +12,7 @@ export function unauthedApi<P extends APIPath>(path: P, params: APIParams<P>) {
 export const typedAPICall = <P extends APIPath>(
   path: P,
   params: APIParams<P>,
-  user: User | null
+  session: AuthSession
 ) => {
   // parse any params that should part of the path (like market/:id)
   const newParams: any = {}
@@ -28,7 +29,7 @@ export const typedAPICall = <P extends APIPath>(
     url,
     method: API[path].method,
     params: newParams,
-    user,
+    session,
   }) as Promise<APIResponse<P>>
 }
 
@@ -49,17 +50,16 @@ export async function baseApiCall(props: {
   url: string
   method: 'POST' | 'PUT' | 'GET'
   params: any
-  user: User | null
+  session: AuthSession
 }) {
-  const { url, method, params, user } = props
+  const { url, method, params, session } = props
 
   const actualUrl = method === 'POST' ? url : appendQuery(url, params)
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   }
-  if (user) {
-    const token = await user.getIdToken()
-    headers.Authorization = `Bearer ${token}`
+  if (session) {
+    headers.Authorization = `Bearer ${session.access_token}`
   }
   const req = new Request(actualUrl, {
     headers,

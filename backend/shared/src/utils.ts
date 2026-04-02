@@ -2,7 +2,6 @@ import {
   createSupabaseDirectClient,
   SupabaseDirectClient,
 } from 'shared/supabase/init'
-import * as admin from 'firebase-admin'
 import { convertPrivateUser, convertUser } from 'common/supabase/users'
 import { log, type Logger } from 'shared/monitoring/log'
 import { metrics } from 'shared/monitoring/metrics'
@@ -55,15 +54,9 @@ export const getPrivateUserByKey = async (
   )
 }
 
-// TODO: deprecate in favor of common/src/envs/is-prod.ts
 export const isProd = () => {
-  // mqp: kind of hacky rn. the first clause is for cloud run API service,
-  // second clause is for local scripts and cloud functions
-  if (process.env.ENVIRONMENT) {
-    return process.env.ENVIRONMENT == 'PROD'
-  } else {
-    return admin.app().options.projectId === 'polylove'
-  }
+  const env = process.env.ENVIRONMENT ?? 'PROD'
+  return env === 'PROD'
 }
 
 export const LOCAL_DEV = process.env.GOOGLE_CLOUD_PROJECT == null

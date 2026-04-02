@@ -670,7 +670,7 @@ export type Database = {
         Args: { channel_id: number; user_id: string }
         Returns: boolean
       }
-      firebase_uid: {
+      auth_uid: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

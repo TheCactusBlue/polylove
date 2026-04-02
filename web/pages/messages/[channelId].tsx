@@ -8,7 +8,7 @@ import { Col } from 'web/components/layout/col'
 import { User } from 'common/user'
 import { useEffect, useState } from 'react'
 import { track } from 'web/lib/service/analytics'
-import { firebaseLogin } from 'web/lib/firebase/users'
+import { loginWithGoogle } from 'web/lib/auth/supabase-auth'
 import { uniq } from 'lodash'
 import { useUser } from 'web/hooks/use-user'
 import { useTextEditor } from 'web/components/widgets/editor'
@@ -158,7 +158,7 @@ export const PrivateChat = (props: {
   async function submitMessage() {
     if (!user) {
       track('sign in to comment')
-      return await firebaseLogin()
+      return await loginWithGoogle()
     }
     if (!editor || editor.isEmpty || isSubmitting || !channelId) return
     setIsSubmitting(true)

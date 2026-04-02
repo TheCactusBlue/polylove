@@ -1,13 +1,9 @@
-import { Storage } from 'firebase-admin/storage'
 import { DOMAIN } from 'common/envs/constants'
+import { getSupabaseAdmin } from 'shared/init-supabase-admin'
 
-type Bucket = ReturnType<InstanceType<typeof Storage>['bucket']>
+const BUCKET = 'public-images'
 
-export const generateAvatarUrl = async (
-  userId: string,
-  name: string,
-  bucket: Bucket
-) => {
+export const generateAvatarUrl = async (userId: string, name: string) => {
   const backgroundColors = [
     '#FF8C00',
     '#800080',
@@ -25,26 +21,34 @@ export const generateAvatarUrl = async (
   try {
     const res = await fetch(imageUrl)
     const buffer = await res.arrayBuffer()
-    return await upload(userId, Buffer.from(buffer), bucket)
+    return await upload(userId, Buffer.from(buffer))
   } catch (e) {
     console.log('error generating avatar', e)
     return `https://${DOMAIN}/images/default-avatar.png`
   }
 }
 
-async function upload(userId: string, buffer: Buffer, bucket: Bucket) {
-  const filename = `user-images/${userId}.png`
-  let file = bucket.file(filename)
+async function upload(userId: string, buffer: Buffer) {
+  const supabaseAdmin = getSupabaseAdmin()
+  const path = `user-images/${userId}.png`
 
-  const exists = await file.exists()
-  if (exists[0]) {
-    await file.delete()
-    file = bucket.file(filename)
+  // Delete if exists, then upload
+  await supabaseAdmin.storage.from(BUCKET).remove([path])
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, buffer, {
+      contentType: 'image/png',
+      upsert: true,
+    })
+
+  if (error) {
+    throw error
   }
-  await file.save(buffer, {
-    private: false,
-    public: true,
-    metadata: { contentType: 'image/png' },
-  })
-  return `https://storage.googleapis.com/${bucket.cloudStorageURI.hostname}/${filename}`
+
+  const {
+    data: { publicUrl },
+  } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(data.path)
+
+  return publicUrl
 }

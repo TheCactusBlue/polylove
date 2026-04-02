@@ -7,7 +7,7 @@ import clsx from 'clsx'
 
 import { Col } from 'web/components/layout/col'
 import { Button } from 'web/components/buttons/button'
-import { uploadImage } from 'web/lib/firebase/storage'
+import { uploadImage } from 'web/lib/storage/upload'
 import { buildArray } from 'common/util/array'
 import { Row } from 'web/components/layout/row'
 import { User } from 'common/user'

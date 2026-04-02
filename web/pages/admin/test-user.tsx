@@ -4,16 +4,12 @@ import { Col } from 'web/components/layout/col'
 import { Row } from 'web/components/layout/row'
 import { Title } from 'web/components/widgets/title'
 import { useRedirectIfSignedIn } from 'web/hooks/use-redirect-if-signed-in'
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from 'firebase/auth'
 import { randomString } from 'common/util/random'
 import { ExpandingInput } from 'web/components/widgets/expanding-input'
 import { usePersistentLocalState } from 'web/hooks/use-persistent-local-state'
 import { getCookie } from 'web/lib/util/cookie'
 import { Input } from 'web/components/widgets/input'
+import { db } from 'web/lib/supabase/db'
 
 export default function TestUser() {
   useRedirectIfSignedIn('/')
@@ -26,7 +22,7 @@ export default function TestUser() {
   )
 
   useEffect(() => {
-    setEmail('manifoldTestNewUser+' + randomString() + '@gmail.com')
+    setEmail('testNewUser+' + randomString() + '@gmail.com')
     setPassword(randomString())
     const key = 'TEST_CREATE_USER_KEY'
     const cookie = getCookie(key)
@@ -36,50 +32,39 @@ export default function TestUser() {
   const [submitting, setSubmitting] = useState(false)
   const [signingIn, setSigningIn] = useState(false)
 
-  const create = () => {
+  const create = async () => {
     setSubmitting(true)
-    const auth = getAuth()
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        setSubmitting(false)
-        console.log('SUCCESS creating firebase user', userCredential)
-      })
-      .catch((error) => {
-        setSubmitting(false)
-        const errorCode = error.code
-        const errorMessage = error.message
-        console.log('ERROR creating firebase user', errorCode, errorMessage)
-      })
+    const { data, error } = await db.auth.signUp({
+      email,
+      password,
+    })
+    setSubmitting(false)
+    if (error) {
+      console.log('ERROR creating user', error.code, error.message)
+    } else {
+      console.log('SUCCESS creating user', data)
+    }
   }
-  const login = () => {
+
+  const login = async () => {
     setSigningIn(true)
-    const auth = getAuth()
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        setSubmitting(false)
-        console.log('SUCCESS logging in firebase user', userCredential)
-      })
-      .catch((error) => {
-        setSigningIn(false)
-        const errorCode = error.code
-        const errorMessage = error.message
-        console.log('ERROR logging in firebase user', errorCode, errorMessage)
-      })
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password,
+    })
+    setSigningIn(false)
+    if (error) {
+      console.log('ERROR logging in', error.code, error.message)
+    } else {
+      console.log('SUCCESS logging in', data)
+    }
   }
 
   return (
     <Col className={'text-ink-600 items-center justify-items-center gap-1'}>
       <Title>Test New User Creation</Title>
       <Row className={'text-ink-600 text-sm'}>
-        Set TEST_CREATE_USER_KEY to{' '}
-        <a
-          className={'text-primary-700 mx-1'}
-          href={
-            'https://www.notion.so/manifoldmarkets/Passwords-f460a845ed6d47fc9ea353699adf7c5f?pvs=4#8a11d580b85449a2bba6e400cda8a4c6'
-          }
-        >
-          the proper value
-        </a>{' '}
+        Set TEST_CREATE_USER_KEY to the proper value
       </Row>
       <ExpandingInput
         value={createUserKey}

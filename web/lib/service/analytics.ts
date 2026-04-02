@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import { ENV_CONFIG } from 'common/envs/constants'
 import { db } from 'web/lib/supabase/db'
 import { removeUndefinedProps } from 'common/util/object'

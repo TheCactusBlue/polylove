@@ -21,8 +21,8 @@ create policy "self and admin read" on user_events for
 select
   using (
     (
-      (user_id = firebase_uid ())
-      or is_admin (firebase_uid ())
+      (user_id = auth_uid ())
+      or is_admin (auth_uid ())
     )
   );
 

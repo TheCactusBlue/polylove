@@ -1,33 +1,16 @@
-import * as admin from 'firebase-admin'
-import { getLocalEnv, initAdmin } from 'shared/init-admin'
-import { loadSecretsToEnv, getServiceAccountCredentials } from 'common/secrets'
-import { LOCAL_DEV, log } from 'shared/utils'
+import { loadSecretsToEnv } from 'common/secrets'
+import { log } from 'shared/utils'
 import { METRIC_WRITER } from 'shared/monitoring/metric-writer'
 import { listen as webSocketListen } from 'shared/websockets/server'
 
 log('Api server starting up....')
 
-if (LOCAL_DEV) {
-  initAdmin()
-} else {
-  const projectId = process.env.GOOGLE_CLOUD_PROJECT
-  admin.initializeApp({
-    projectId,
-    storageBucket: `${projectId}.appspot.com`,
-  })
-}
-
 METRIC_WRITER.start()
 
 import { app } from './app'
 
-const credentials = LOCAL_DEV
-  ? getServiceAccountCredentials(getLocalEnv())
-  : // No explicit credentials needed for deployed service.
-    undefined
-
 const startupProcess = async () => {
-  await loadSecretsToEnv(credentials)
+  await loadSecretsToEnv()
   log('Secrets loaded.')
 
   const PORT = process.env.PORT ?? 8088

@@ -2,7 +2,7 @@ import { TrashIcon } from '@heroicons/react/solid'
 import router from 'next/router'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { auth } from 'web/lib/firebase/users'
+import { logout } from 'web/lib/auth/supabase-auth'
 import { ConfirmationButton } from '../buttons/confirmation-button'
 import { Col } from '../layout/col'
 import { Input } from '../widgets/input'
@@ -14,7 +14,7 @@ export function DeleteYourselfButton(props: { username: string }) {
 
   const deleteAccount = async () => {
     await api('me/delete', { username })
-    await auth.signOut()
+    await logout()
   }
 
   const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('')

@@ -21,8 +21,8 @@ create policy "private member insert" on private_user_seen_message_channels for 
 with
   check (
     (
-      (firebase_uid () is not null)
-      and can_access_private_messages (channel_id, firebase_uid ())
+      (auth_uid () is not null)
+      and can_access_private_messages (channel_id, auth_uid ())
     )
   );
 
@@ -32,8 +32,8 @@ create policy "private member read" on private_user_seen_message_channels for
 select
   using (
     (
-      (firebase_uid () is not null)
-      and can_access_private_messages (channel_id, firebase_uid ())
+      (auth_uid () is not null)
+      and can_access_private_messages (channel_id, auth_uid ())
     )
   );
 

@@ -60,7 +60,7 @@ drop policy if exists "self update" on lovers;
 create policy "self update" on lovers
 for update
 with
-  check ((user_id = firebase_uid ()));
+  check ((user_id = auth_uid ()));
 
 -- Indexes
 drop index if exists lovers_pkey;

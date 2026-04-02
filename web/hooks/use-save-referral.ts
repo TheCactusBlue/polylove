@@ -1,7 +1,7 @@
 import { cleanUsername } from 'common/util/clean-username'
 import { useEffect } from 'react'
 
-import { User, writeReferralInfo } from 'web/lib/firebase/users'
+import { User, writeReferralInfo } from 'web/lib/auth/supabase-auth'
 import { useDefinedSearchParams } from 'web/hooks/use-defined-search-params'
 
 export const useSaveReferral = (

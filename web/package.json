@@ -5,8 +5,8 @@
   "scripts": {
     "serve": "next dev -p 3000",
     "ts-watch": "tsc --watch --noEmit --incremental --preserveWatchOutput --pretty",
-    "dev": "cross-env NEXT_PUBLIC_FIREBASE_ENV=DEV concurrently -n NEXT,TS -c magenta,cyan \"yarn serve\" \"yarn ts-watch\"",
-    "prod": "cross-env NEXT_PUBLIC_FIREBASE_ENV=PROD concurrently -n NEXT,TS -c magenta,cyan \"yarn serve\" \"yarn ts-watch\"",
+    "dev": "cross-env NEXT_PUBLIC_ENVIRONMENT=DEV concurrently -n NEXT,TS -c magenta,cyan \"yarn serve\" \"yarn ts-watch\"",
+    "prod": "cross-env NEXT_PUBLIC_ENVIRONMENT=PROD concurrently -n NEXT,TS -c magenta,cyan \"yarn serve\" \"yarn ts-watch\"",
     "disk-space-info": "du -hs ./node_modules && du -hs ./.next && du -hs ./.next/cache",
     "clear-nextjs-cache": "rm -rf ./.next/cache",
     "build": "next build",
@@ -20,7 +20,6 @@
   },
   "dependencies": {
     "@floating-ui/react": "0.19.0",
-    "@google-cloud/secret-manager": "4.2.1",
     "@headlessui/react": "1.7.11",
     "@heroicons/react": "1.0.6",
     "@popperjs/core": "2.0.0",
@@ -42,7 +41,6 @@
     "cors": "2.8.5",
     "csstype": "3.0.10",
     "dayjs": "1.11.10",
-    "firebase": "11.1.0",
     "link-preview-js": "3.0.4",
     "lodash": "4.17.21",
     "nanoid": "^3.3.4",

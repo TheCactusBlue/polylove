@@ -16,7 +16,6 @@ import { BottomNavBar } from 'web/components/nav/love-bottom-nav-bar'
 import { useIsMobile } from 'web/hooks/use-is-mobile'
 import { useTracking } from 'web/hooks/use-tracking'
 import { useUser } from 'web/hooks/use-user'
-import { GoogleOneTapLogin } from 'web/lib/firebase/google-onetap-login'
 import Sidebar from './nav/love-sidebar'
 import { signupThenMaybeRedirectToSignup } from 'web/lib/util/signup'
 import { useLover } from 'web/hooks/use-lover'
@@ -59,7 +58,6 @@ export function LovePage(props: {
 
   return (
     <>
-      <GoogleOneTapLogin className="fixed bottom-12 right-4 z-[1000]" />
       <Col
         className={clsx(
           'pb-[58px] lg:pb-0', // bottom bar padding

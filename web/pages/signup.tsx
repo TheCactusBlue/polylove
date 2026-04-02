@@ -10,8 +10,8 @@ import { LoadingIndicator } from 'web/components/widgets/loading-indicator'
 import { GoogleSignInButton } from 'web/components/buttons/sign-up-button'
 import {
   CACHED_REFERRAL_USERNAME_KEY,
-  firebaseLogin,
-} from 'web/lib/firebase/users'
+  loginWithGoogle,
+} from 'web/lib/auth/supabase-auth'
 import { api } from 'web/lib/api'
 import { useRouter } from 'next/router'
 import ManifoldLoveLogo from 'web/components/manifold-love-logo'
@@ -53,7 +53,7 @@ export default function SignupPage() {
       ) : user === null ? (
         <Col className={'items-center justify-around gap-4 pt-[20vh]'}>
           <ManifoldLoveLogo noLink />
-          <GoogleSignInButton onClick={firebaseLogin} />
+          <GoogleSignInButton onClick={loginWithGoogle} />
         </Col>
       ) : (
         <Col className={'bg-canvas-0 w-full max-w-2xl px-6 py-4'}>

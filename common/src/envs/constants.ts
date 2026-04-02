@@ -1,50 +1,20 @@
-import { DEV_CONFIG } from './dev'
-import { EnvConfig, PROD_CONFIG } from './prod'
-
-// Valid in web client & Vercel deployments only.
-export const ENV = (process.env.NEXT_PUBLIC_FIREBASE_ENV ?? 'PROD') as
-  | 'PROD'
-  | 'DEV'
-
-export const CONFIGS: { [env: string]: EnvConfig } = {
-  PROD: PROD_CONFIG,
-  DEV: DEV_CONFIG,
-}
+import { ENV_CONFIG } from './prod'
+export { ENV_CONFIG }
 
 export const MAX_DESCRIPTION_LENGTH = 16000
 export const MAX_ANSWER_LENGTH = 240
 
-export const ENV_CONFIG = CONFIGS[ENV]
+export const DOMAIN = ENV_CONFIG.domain
+
+export const AUTH_COOKIE_NAME = 'POLYLOVE_AUTH'
 
 export function isAdminId(id: string) {
   return ENV_CONFIG.adminIds.includes(id)
 }
 
 export function isModId(id: string) {
-  return MOD_IDS.includes(id)
+  return ENV_CONFIG.modIds.includes(id)
 }
-export const DOMAIN = ENV_CONFIG.domain
-export const FIREBASE_CONFIG = ENV_CONFIG.firebaseConfig
-export const PROJECT_ID = ENV_CONFIG.firebaseConfig.projectId
-
-export const AUTH_COOKIE_NAME = `FBUSER_${PROJECT_ID.toUpperCase().replace(
-  /-/g,
-  '_'
-)}`
-
-export const MOD_IDS = [
-  'HTbxWFlzWGeHUTiwZvvF0qm8W433', // Conflux
-  '9dAaZrNSx5OT0su6rpusDoG9WPN2', // dglid
-  '5XMvQhA3YgcTzyoJRiNqGWyuB9k2', // dreev
-  '2VhlvfTaRqZbFn2jqxk2Am9jgsE2', // Gabrielle
-  'XeQf3ygmrGM1MxdsE3JSlmq8vL42', // Jacy
-  'JlVpsgzLsbOUT4pajswVMr0ZzmM2', // Joshua
-  'sA7V30Ic73XZtniboy2eKr6ekkn1', // MartinRandall
-  'jO7sUhIDTQbAJ3w86akzncTlpRG2', // MichaelWheatley
-  'lkkqZxiWCpOgtJ9ztJcAKz4d9y33', // NathanpmYoung
-  'YOILpFNyg0gGj79zBIBUpJigHQ83', // SneakySly
-  'KHX2ThSFtLQlau58hrjtCX7OL2h2', // shankypanky (stefanie)
-]
 
 export const VERIFIED_USERNAMES = [
   'ScottAlexander',
@@ -65,6 +35,7 @@ export const RESERVED_PATHS = [
   'admin',
   'analytics',
   'api',
+  'auth',
   'browse',
   'career',
   'careers',

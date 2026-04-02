@@ -1,11 +1,10 @@
 import { Request } from 'express'
 import { trackAuditEvent } from 'shared/audit-events'
 import { PostHog } from 'posthog-node'
-import { isProd, log } from 'shared/utils'
-import { PROD_CONFIG } from 'common/envs/prod'
-import { DEV_CONFIG } from 'common/envs/dev'
+import { log } from 'shared/utils'
+import { ENV_CONFIG } from 'common/envs/constants'
 
-const key = isProd() ? PROD_CONFIG.posthogKey : DEV_CONFIG.posthogKey
+const key = ENV_CONFIG.posthogKey
 
 const client = new PostHog(key, {
   host: 'https://us.i.posthog.com',

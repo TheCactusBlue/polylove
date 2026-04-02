@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import LoveLogo from '../public/manifold_love_logo.svg'
 import clsx from 'clsx'
-import { ENV } from 'common/envs/constants'
+import { isProd } from 'common/envs/is-prod'
 import { Row } from 'web/components/layout/row'
 
 export default function ManifoldLoveLogo(props: {
@@ -16,7 +16,7 @@ export default function ManifoldLoveLogo(props: {
         aria-hidden
       />
       <div className={clsx('my-auto text-xl font-thin')}>
-        {ENV == 'DEV' ? 'devifold' : 'manifold'}
+        {isProd() ? 'manifold' : 'devifold'}
         <span className="mx-[1px]">.</span>
         <span className="font-semibold text-pink-700 dark:text-pink-300">
           love

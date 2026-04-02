@@ -15,8 +15,8 @@ export async function api<P extends APIPath>(
     } = await db.auth.getSession()
     if (!session) {
       let i = 0
-      let currentSession = session
-      while (!currentSession) {
+      let accessToken: string | null = null
+      while (!accessToken) {
         i++
         await sleep(i * 10)
         if (i > 10) {
@@ -24,11 +24,15 @@ export async function api<P extends APIPath>(
           break
         }
         const { data } = await db.auth.getSession()
-        currentSession = data.session
+        accessToken = data.session?.access_token ?? null
       }
-      return typedAPICall(path, params, currentSession)
+      return typedAPICall(
+        path,
+        params,
+        accessToken ? { access_token: accessToken } : null
+      )
     }
-    return typedAPICall(path, params, session)
+    return typedAPICall(path, params, { access_token: session.access_token })
   }
 
   return typedAPICall(path, params, null)

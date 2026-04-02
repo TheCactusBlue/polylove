@@ -73,7 +73,7 @@ export default function Sidebar(props: {
   )
 }
 
-const logout = async () => {
+const doLogout = async () => {
   // log out, and then reload the page, in case SSR wants to boot them out
   // of whatever logged-in-only area of the site they might be in
   await withTracking(logout, 'sign out')()
@@ -114,7 +114,7 @@ const bottomNav = (
       ),
       onClick: toggleTheme,
     },
-    loggedIn && { name: 'Sign out', icon: LogoutIcon, onClick: logout }
+    loggedIn && { name: 'Sign out', icon: LogoutIcon, onClick: doLogout }
   )
 
 export const SignUpButton = (props: {

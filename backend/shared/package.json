@@ -21,5 +21,8 @@
     "pg-promise": "11.4.1",
     "posthog-node": "4.11.0",
     "string-similarity": "4.0.4"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
   }
 }

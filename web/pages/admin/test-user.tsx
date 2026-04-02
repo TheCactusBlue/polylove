@@ -40,7 +40,7 @@ export default function TestUser() {
     })
     setSubmitting(false)
     if (error) {
-      console.log('ERROR creating user', error.code, error.message)
+      console.log('ERROR creating user', error.status, error.message)
     } else {
       console.log('SUCCESS creating user', data)
     }
@@ -54,7 +54,7 @@ export default function TestUser() {
     })
     setSigningIn(false)
     if (error) {
-      console.log('ERROR logging in', error.code, error.message)
+      console.log('ERROR logging in', error.status, error.message)
     } else {
       console.log('SUCCESS logging in', data)
     }
